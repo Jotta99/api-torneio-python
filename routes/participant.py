@@ -11,11 +11,10 @@ db = SessionLocal()
 #Router
 router = APIRouter()
 
-@router.get("/get-all-participants")
+@router.get("/get-all")
 async def getParticipants():
     try:
         participants = db.query(Participant).filter(Participant.deleted_at.is_(None)).all()
-        db.close()
         
         return participants
     except ValueError as e:
@@ -27,7 +26,6 @@ async def getParticipant(participant_id: int):
         query = text(f'SELECT participant.id AS participant_id, participant.name AS participant_name, participant_statistics.wins AS total_wins, participant_statistics.losts AS total_losts, participant_statistics.total_score AS total_score, team.id AS team_id, team.name AS team_name, team_statistics.wins AS team_wins, team_statistics.losts AS team_losts, team_statistics.total_score AS team_total_score FROM participant LEFT JOIN team ON team.id = participant.team_id AND team.deleted_at IS NULL LEFT JOIN team_statistics ON team_statistics.id = team.team_statistics_id AND team_statistics.deleted_at IS NULL INNER JOIN participant_statistics ON participant_statistics.id = participant.participant_statistics_id AND participant_statistics.deleted_at IS NULL WHERE participant.deleted_at IS NULL AND participant.id = {participant_id}')
         result = db.execute(query)
         participant = result.mappings().all()
-        db.close()
         
         return {"participant": participant[0]}
     except ValueError as e:
@@ -42,14 +40,13 @@ async def newParticipant(req: Request):
             db.add(objSave)
             db.commit()
             db.refresh(objSave)
-            db.close()
 
         statistic = ParticipantStatistics(
             wins=0,
             losts=0,
             total_score=0,
             created_at=datetime.now(),
-            created_by='user_administrator'
+            created_by='admin'
         )
         
         save(statistic)
@@ -62,7 +59,7 @@ async def newParticipant(req: Request):
             participant_statistics_id=statistic.id,
             password=data['password'],
             created_at=datetime.now(),
-            created_by='user_administrator'
+            created_by='admin'
         )
             
         save(participant)
@@ -79,10 +76,9 @@ async def deleteParticipant(req: Request):
         
         if participant:
             participant.deleted_at = datetime.now()
-            participant.deleted_by = 'user_administrator'
+            participant.deleted_by = 'admin'
 
             db.commit()
-            db.close()
             
             return {"mensagem": 'O Participante foi removido com sucesso'}   
         else:
@@ -105,7 +101,14 @@ async def joinTeam(req: Request):
                 participant.team_id = data['team_id']
 
                 db.commit()
-                db.close()
+                
+                statistic = db.query(ParticipantStatistics).filter(ParticipantStatistics.deleted_at.is_(None)).filter_by(id=participant.participant_statistics_id).first()
+                
+                if statistic:
+                    statistic.team_id = data['team_id']
+
+                    db.commit()
+
             else:
                 return {'mensagem': 'Participante não encontrado'}
         else:

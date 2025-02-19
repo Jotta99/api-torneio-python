@@ -56,13 +56,13 @@ Esta é uma API desenvolvida em Python para gerenciar e simular um torneio. A AP
 
 ### 🔹 Participantes
 
-- `GET /participants/get-all-participants` - Lista todos os participantes
+- `GET /participants/get-all` - Lista todos os participantes
 - `PUT /participants/new-participant` - Adiciona um novo participante
 - `PUT /participants/join-team` - Adiciona um participante a um time
 
 ### 🔹 Times
 
-- `GET /teams/get-all-teams` - Lista todos os times
+- `GET /teams/get-all` - Lista todos os times
 - `PUT /teams/new-team` - Cria um novo time
 
 🔹 *Desenvolvido por [Joás Amorim](https://github.com/Jotta99)*
